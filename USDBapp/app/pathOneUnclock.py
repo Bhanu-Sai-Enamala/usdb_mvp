@@ -2,11 +2,7 @@
 
 
 ###USER CONSTRUCTS UNSIGNED BURN+BTC UNLOCK TRANSACTION
-#STEP 1 - RUN THE BELOW
-#ord --regtest \
-# --cookie-file env/regtest/.cookie \
-# --data-dir env \
-# wallet burn --dry-run "1000:UNCOMMON•GOODS" --fee-rate 1
+
 import subprocess
 import os
 import json
@@ -21,20 +17,20 @@ def run_path_one_unlock():
     ORD_DIRECTORY = "/Users/bhanusaienamala/Desktop/bitcoin/USDB_mvp/ord_modified/ord-btclock"
 
     # Construct the command
-    # burn_cmd = [
-    #     "ord", "--regtest",
-    #     "--cookie-file", "env/regtest/.cookie",
-    #     "--datadir", "env",
-    #     "wallet", "--name","--user", "burn", "--dry-run", "1000:UNCOMMON.GOODS",
-    #     "--fee-rate", "1"
-    # ]
     burn_cmd = [
         "ord", "--regtest",
         "--cookie-file", "env/regtest/.cookie",
         "--datadir", "env",
-        "wallet", "burn", "--dry-run", "1000:UNCOMMONGOODS",
+        "wallet", "--name","--user", "burn", "--dry-run", "1000:UNCOMMON.GOODS",
         "--fee-rate", "1"
     ]
+    # burn_cmd = [
+    #     "ord", "--regtest",
+    #     "--cookie-file", "env/regtest/.cookie",
+    #     "--datadir", "env",
+    #     "wallet", "burn", "--dry-run", "1000:UNCOMMONGOODS",
+    #     "--fee-rate", "1"
+    # ]
 
     # Execute the command
     burn_result = subprocess.run(burn_cmd, cwd=ORD_DIRECTORY, env=env, capture_output=True, text=True)
@@ -67,16 +63,16 @@ def run_path_one_unlock():
     if voutBTClocked is None:
         raise Exception("No matching vout with 0.0001 BTC to target address found.")
     print("BTC Locked VOUT (BTClocked):", voutBTClocked)
-    # receive_address = subprocess.check_output(
-    #     [
-    #         "ord", "--regtest", "--cookie-file", "env/regtest/.cookie", "--data-dir", "env",
-    #         "wallet", "--name", "user", "receive"
-    #     ],
-    #     cwd=ORD_DIRECTORY,
-    #     stderr=subprocess.STDOUT,
-    #     text=True
-    # ).strip()
-    receive_address = "bcrt1q6azl2g0gmkrqmjzra6cep4lmaq9ymww0djw6qx"  # Replace with actual address if needed
+    receive_address = subprocess.check_output(
+        [
+            "ord", "--regtest", "--cookie-file", "env/regtest/.cookie", "--data-dir", "env",
+            "wallet", "--name", "user", "receive"
+        ],
+        cwd=ORD_DIRECTORY,
+        stderr=subprocess.STDOUT,
+        text=True
+    ).strip()
+    # receive_address = "bcrt1q6azl2g0gmkrqmjzra6cep4lmaq9ymww0djw6qx"  # Replace with actual address if needed
     # getraw_cmd = ["bitcoin-cli", "-datadir=env", "getrawtransaction", input_txid, "1"]
     # raw_result = subprocess.run(getraw_cmd,cwd=ORD_DIRECTORY, capture_output=True, text=True, check=True)
     inputs = [
