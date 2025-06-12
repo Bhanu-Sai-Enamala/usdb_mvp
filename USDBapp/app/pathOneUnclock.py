@@ -264,5 +264,12 @@ def run_path_one_unlock():
 
     print("✅ Final signed Transaction Hex:\n", final_tx_hex)
 
-run_path_one_unlock()
+    sendrawtransaction_cmd = [
+    "bitcoin-cli", "-datadir=env", "sendrawtransaction", final_tx_hex
+]
+    subprocess.run(
+        sendrawtransaction_cmd, cwd=ORD_DIRECTORY, capture_output=True, text=True, check=True
+    )
+
+
 

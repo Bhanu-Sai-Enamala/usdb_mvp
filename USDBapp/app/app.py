@@ -4,6 +4,7 @@ import os
 from indexer import validate_mint, run_block_watcher_once
 import json
 from generateP2TRaddress import generate_bech32m_address
+from pathOneUnclock import run_path_one_unlock
 app = Flask(__name__)
 
 
@@ -77,6 +78,13 @@ HTML_TEMPLATE = """
             <button name="action" value="run_block_watcher">Run USDB Watcher</button>
         </form>
     </div>
+    <div class="section">
+    <h2>Liquidation with User and Protocol Coordination</h2>
+    <form method="post">
+        <!-- Placeholder for logic to be added -->
+        <button name="action" value="burn_runes_unlock_btc">Burn Runes and Unlock BTC</button>
+    </form>
+</div>
     {% if result %}
         <h2>Result:</h2>
         <pre>{{ result }}</pre>
@@ -196,6 +204,14 @@ def index():
                     result = json.dumps(mints, indent=2)
                 else:
                     result = "❌ No valid mints found during block scan."
+            elif action == "burn_runes_unlock_btc":
+                
+                    # Replace with actual logic to run the script
+                output = run_path_one_unlock()
+                if output:
+                    result = f"✅ BTC Unlocked:\n{output}"
+                else:
+                    result = "❌ No BTC to unlock or error in unlocking process."
         except subprocess.CalledProcessError as e:
             result = f"Error:\n{e.output}"
     return render_template_string(HTML_TEMPLATE, result=result)

@@ -10,7 +10,7 @@ from typing import List
 # ---------------- CONFIG ---------------- #
 BITCOIN_RPC_URL = "http://localhost:9000"
 ORD_SERVER_URL = "http://localhost:9001"
-COOKIE_PATH = "/Users/bhanusaienamala/Desktop/bitcoin/runes_sourcecode/ord_modified/ord-btclock/env/regtest/.cookie"
+COOKIE_PATH = "/Users/bhanusaienamala/Desktop/bitcoin/USDB_mvp/ord_modified/ord-btclock/env/regtest/.cookie"
 MNEMONIC = "degree evidence predict noble episode color stable chimney barrel drum badge gun"  # 🔑 Replace
 LOCK_AMOUNT_BTC = 0.0001
 FEE_AMOUNT_BTC = 0.00005
