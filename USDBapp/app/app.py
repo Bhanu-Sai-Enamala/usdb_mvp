@@ -6,6 +6,7 @@ import json
 from generateP2TRaddress import generate_bech32m_address
 app = Flask(__name__)
 
+
 ORD_DIRECTORY = "/Users/bhanusaienamala/Desktop/bitcoin/USDB_mvp/ord_modified/ord-btclock"
 
 HTML_TEMPLATE = """
@@ -103,7 +104,7 @@ def index():
                     cwd=ORD_DIRECTORY,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL
-                )
+                ) 
                 import time
                 time.sleep(10)
                 result = "ord and bitcoin test server started."
