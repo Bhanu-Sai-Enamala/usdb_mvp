@@ -7,6 +7,7 @@ import subprocess
 import os
 import json
 import pexpect 
+import re
 
 def run_path_one_unlock():
     # Setup environment
@@ -14,14 +15,14 @@ def run_path_one_unlock():
     
 
     # Absolute path to the directory where ord command should be run
-    ORD_DIRECTORY = "/Users/bhanusaienamala/Desktop/bitcoin/USDB_mvp/ord_modified/ord-btclock"
+    ORD_DIRECTORY = "/Users/bhanusaienamala/Desktop/bitcoin/runes_sourcecode/ordbtclock/ord-btclock"
 
     # Construct the command
     burn_cmd = [
         "ord", "--regtest",
         "--cookie-file", "env/regtest/.cookie",
         "--datadir", "env",
-        "wallet", "--name","--user", "burn", "--dry-run", "1000:UNCOMMON.GOODS",
+        "wallet", "--name","user", "burn", "--dry-run", "1000:UNCOMMONGOODS",
         "--fee-rate", "1"
     ]
     # burn_cmd = [
@@ -45,6 +46,27 @@ def run_path_one_unlock():
     decode_cmd = ["bitcoin-cli", "-datadir=env", "decodepsbt", psbt]
     decode_result = subprocess.run(decode_cmd,cwd=ORD_DIRECTORY, capture_output=True, text=True, check=True)
     decoded = json.loads(decode_result.stdout)
+    op_return_hex = None
+
+    for vout in decoded["tx"]["vout"]:
+        script = vout.get("scriptPubKey", {})
+        if script.get("type") == "nulldata":
+            hex_field = script.get("hex")
+            if hex_field and hex_field.startswith("6a"):  # OP_RETURN prefix
+                # Strip '6a' (OP_RETURN) and '5d' (data push opcode if present)
+                op_return_hex = hex_field[2:]  # remove just the OP_RETURN
+                break
+
+    if op_return_hex:
+        print("✅ Extracted OP_RETURN hex data:", op_return_hex)
+    else:
+        print("❌ OP_RETURN data not found.")
+    
+
+# Remove first 2 bytes (4 hex chars)
+    cleaned_op_return = op_return_hex[4:]
+
+    print("🔹 Cleaned OP_RETURN (no prefix):", cleaned_op_return)
     input_txid = decoded["tx"]["vin"][0]["txid"]
     input_vout = decoded["tx"]["vin"][0]["vout"]
     print("Input TXID:", input_txid)
@@ -63,6 +85,12 @@ def run_path_one_unlock():
     if voutBTClocked is None:
         raise Exception("No matching vout with 0.0001 BTC to target address found.")
     print("BTC Locked VOUT (BTClocked):", voutBTClocked)
+
+    # Extract and print scriptPubKey hex for both voutBTClocked and input_vout
+    input_script_hex = raw_tx["vout"][input_vout]["scriptPubKey"]["hex"]
+    voutBTClocked_script_hex = raw_tx["vout"][voutBTClocked]["scriptPubKey"]["hex"]
+    print("Input ScriptPubKey Hex:", input_script_hex)
+    print("BTC Locked ScriptPubKey Hex (BTClocked):", voutBTClocked_script_hex)
     receive_address = subprocess.check_output(
         [
             "ord", "--regtest", "--cookie-file", "env/regtest/.cookie", "--data-dir", "env",
@@ -72,6 +100,9 @@ def run_path_one_unlock():
         stderr=subprocess.STDOUT,
         text=True
     ).strip()
+    receive_address = json.loads(receive_address)
+    receive_address = receive_address["addresses"][0]
+    print("Receive Address:", receive_address)
     # receive_address = "bcrt1q6azl2g0gmkrqmjzra6cep4lmaq9ymww0djw6qx"  # Replace with actual address if needed
     # getraw_cmd = ["bitcoin-cli", "-datadir=env", "getrawtransaction", input_txid, "1"]
     # raw_result = subprocess.run(getraw_cmd,cwd=ORD_DIRECTORY, capture_output=True, text=True, check=True)
@@ -81,7 +112,7 @@ def run_path_one_unlock():
   ]
 
     outputs = [
-        {"data": "00ae0201e80700"},
+        {"data": cleaned_op_return},
         {receive_address: 0.0001}
     ]
 
@@ -104,7 +135,7 @@ def run_path_one_unlock():
         check=True
     )
     print("Raw Transaction:", raw_tx_hex.stdout)
-    pattern = "00ae0201e80700"
+    pattern = cleaned_op_return
     raw_tx_hex_str = raw_tx_hex.stdout.strip()
     pattern_index = raw_tx_hex_str.find(pattern)
 
@@ -147,7 +178,7 @@ def run_path_one_unlock():
 
     # Step 2: Process PSBT with wallet (sign it)
     process_cmd = [
-        "bitcoin-cli", "-datadir=env", "walletprocesspsbt", psbt
+        "bitcoin-cli", "-datadir=env", "-rpcwallet=user", "walletprocesspsbt", psbt
     ]
     process_result = subprocess.run(
         process_cmd, cwd=ORD_DIRECTORY, capture_output=True, text=True, check=True
@@ -175,17 +206,36 @@ def run_path_one_unlock():
     else:
         print("final_scriptwitness not found in the decoded PSBT.")
     #insert sighash generation  command - @anshika
-#     ./target/release/ord --regtest \
-#   --cookie-file env/regtest/.cookie \
-#   --data-dir env \
-#   --rawtxhex <raw_tx_hex> \
-#   --rawspendscriptpathhex <raw_spend_script_path_hex> \
-#   --scriptPubKeyHexOne <script_pub_key_hex_one> \
-#   --scriptPubKeyHexTwo <script_pub_key_hex_two> \
-#   --inputIndex <input_index> 
-
+# ./target/release/ord --regtest   --cookie-file env/regtest/.cookie   --data-dir env   script-path-sighash   --rawtxhex 02000000014eeb7466e814a86fbadd776b027ff66d5452ca6cb35b617ccb9f988297ba89520000000000fdffffff01905f010000000000160014eb8ad234e24b89225c1f75e2abc8c01d3523e95500000000   --rawspendscriptpathhex 2025f1a245ff572ac11fc1e5da5f6a5a93c946f17c20f1c317c5bae2a0ef2d821cad20d2c1cb1575d323b6120b6e5bcc9ce5ad373e88e73e675030f1c2c5261b4dbc86ac   --script-pubkey-hex-one 51201d8e516e4dc5f094cd9ba04ce7ba847e1be7b4e9e4b9dda76a5f567832401860   --script-pubkey-hex-two 51201d8e516e4dc5f094cd9ba04ce7ba847e1be7b4e9e4b9dda76a5f567832401860   --input-index 0
+    inputindex="1"
+    print(input_script_hex)
+    print(voutBTClocked_script_hex)
     # Replace with actual values
-    sighash = "f7b6a4ec8179632a22fb916932adc9c4149d51cd4860428934c38f397b1dbc48"
+    sighash =subprocess.check_output(
+                    [
+                        "./target/release/ord",
+                        "--regtest",
+                        "--cookie-file", "env/regtest/.cookie",
+                        "--data-dir", "env",
+                        "script-path-sighash",
+                        "--rawtxhex", modified_tx_hex,
+                        "--rawspendscriptpathhex", "2025f1a245ff572ac11fc1e5da5f6a5a93c946f17c20f1c317c5bae2a0ef2d821cad20d2c1cb1575d323b6120b6e5bcc9ce5ad373e88e73e675030f1c2c5261b4dbc86ac",
+                        "--script-pubkey-hex-one", input_script_hex,
+                        "--script-pubkey-hex-two", voutBTClocked_script_hex,
+                        "--input-index", inputindex
+                    ],
+                    cwd=ORD_DIRECTORY,
+                    stderr=subprocess.STDOUT,
+                    text=True
+                )
+    print("Sighash:", sighash.strip())
+    sighash = sighash.strip()
+    match = re.search(r"Taproot Script Path Sighash:\s*([0-9a-fA-F]{64})", sighash)
+    if match:
+        sighash = match.group(1)
+        print("✅ Extracted sighash:", sighash)
+    else:
+        print("❌ Sighash not found.")
     privkey = "4d232b61b03967219060631a3928fe6f2087559e3dc00cfbafbf4153b1aa8003"
 
     # Spawn a btcdeb shell session
@@ -202,7 +252,7 @@ def run_path_one_unlock():
 
     # Extract the output
     output = child.before.decode("utf-8")
-
+    print("Output from btcdeb:\n", output)
     # Parse the output to extract the signature
     protocol_signature = ""
     for line in output.strip().splitlines():
@@ -211,6 +261,7 @@ def run_path_one_unlock():
             break
 
     # Display results
+    # print("✅ Protocol Schnorr Signature:", protocol_signature)
     if protocol_signature:
         print("✅ Protocol Schnorr Signature:", protocol_signature)
     else:
@@ -267,9 +318,10 @@ def run_path_one_unlock():
     sendrawtransaction_cmd = [
     "bitcoin-cli", "-datadir=env", "sendrawtransaction", final_tx_hex
 ]
-    subprocess.run(
+    result = subprocess.run(
         sendrawtransaction_cmd, cwd=ORD_DIRECTORY, capture_output=True, text=True, check=True
     )
+    return f"✅ Transaction broadcasted!\nTXID: {result.stdout.strip()}"
 
 
 

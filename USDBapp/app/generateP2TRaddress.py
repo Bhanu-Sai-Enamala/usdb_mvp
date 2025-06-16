@@ -18,3 +18,5 @@ def generate_bech32m_address():
             return line.split(":")[1].strip()
 
     raise Exception("Address generation failed.\nOutput:\n" + result.stdout)
+
+print(generate_bech32m_address())

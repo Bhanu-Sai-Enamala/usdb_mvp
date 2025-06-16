@@ -5,16 +5,18 @@ from indexer import validate_mint, run_block_watcher_once
 import json
 from generateP2TRaddress import generate_bech32m_address
 from pathOneUnclock import run_path_one_unlock
+from pathTwoUnlock import run_path_two_unlock
 app = Flask(__name__)
 
 
-ORD_DIRECTORY = "/Users/bhanusaienamala/Desktop/bitcoin/USDB_mvp/ord_modified/ord-btclock"
+ORD_DIRECTORY = "/Users/bhanusaienamala/Desktop/bitcoin/runes_sourcecode/ordbtclock/ord-btclock"
+
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ORD Wallet Interface</title>
+    <title>USDB stable coin</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 30px; }
         .section { border: 1px solid #ddd; border-radius: 8px; padding: 18px 22px; margin-bottom: 25px; background: #f8f8f8; }
@@ -80,11 +82,24 @@ HTML_TEMPLATE = """
     </div>
     <div class="section">
     <h2>Liquidation with User and Protocol Coordination</h2>
+    <h3>🧾 User constructs a transaction burning the runes he received by locking BTC and includes in the same transaction the unlocking of the locked BTC</h3>
+    <h3>✍️ User signs and submits it to the protocol.</h3>
+    <h3>✅ Protocol checks and provides its signature for unlock of the BTC locked UTXO using script path.n</h3>
     <form method="post">
         <!-- Placeholder for logic to be added -->
         <button name="action" value="burn_runes_unlock_btc">Burn Runes and Unlock BTC</button>
     </form>
-</div>
+    </div>
+    <div class="section">
+    <h2>Oracle Attested Liquidation</h2>
+    <h3>Protocol detects an undercollateralised debt.Construsts a transaction to auction off the locked BTC and sends to oracle </h3>
+    <h3>oracle provides signature for liquidation</h3>
+    <h3>The auctionee(liquidation provider) receives the partially signed transaction, signs and brodcasts. Thus the BTC is unlocked through different path and corresponding runes burnt in same transaction. n</h3>
+    <form method="post">
+        <!-- Placeholder for logic to be added -->
+        <button name="action" value="auction_btc">Auction BTC</button>
+    </form>
+    </div>
     {% if result %}
         <h2>Result:</h2>
         <pre>{{ result }}</pre>
@@ -202,6 +217,7 @@ def index():
                 mints = run_block_watcher_once()
                 if mints:
                     result = json.dumps(mints, indent=2)
+                    result += "\n\n✅ Valid mint confirmed and BTC lock to protocol provided address verified."
                 else:
                     result = "❌ No valid mints found during block scan."
             elif action == "burn_runes_unlock_btc":
@@ -209,9 +225,17 @@ def index():
                     # Replace with actual logic to run the script
                 output = run_path_one_unlock()
                 if output:
-                    result = f"✅ BTC Unlocked:\n{output}"
+                    result = f"✅ BTC Unlocked and corresponding Runes Burnt:\n{output}"
                 else:
-                    result = "❌ No BTC to unlock or error in unlocking process."
+                    result = f"❌ No BTC to unlock or error in unlocking process.\nDetails:\n{output}"
+            elif action == "auction_btc":
+        
+            # Replace with actual logic to run the script
+                output = run_path_two_unlock()
+                if output:
+                    result = f"✅ BTC auctioned off and corresponding Runes Burnt:\n{output}"
+                else:
+                    result = f"❌ No BTC to unlock or error in unlocking process.\nDetails:\n{output}"
         except subprocess.CalledProcessError as e:
             result = f"Error:\n{e.output}"
     return render_template_string(HTML_TEMPLATE, result=result)

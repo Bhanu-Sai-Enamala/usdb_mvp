@@ -10,7 +10,7 @@ from typing import List
 # ---------------- CONFIG ---------------- #
 BITCOIN_RPC_URL = "http://localhost:9000"
 ORD_SERVER_URL = "http://localhost:9001"
-COOKIE_PATH = "/Users/bhanusaienamala/Desktop/bitcoin/USDB_mvp/ord_modified/ord-btclock/env/regtest/.cookie"
+COOKIE_PATH = "/Users/bhanusaienamala/Desktop/bitcoin/runes_sourcecode/ordbtclock/ord-btclock/env/regtest/.cookie"
 MNEMONIC = "degree evidence predict noble episode color stable chimney barrel drum badge gun"  # 🔑 Replace
 LOCK_AMOUNT_BTC = 0.0001
 FEE_AMOUNT_BTC = 0.00005
@@ -97,7 +97,7 @@ def check_transaction(txid, admin_address):
                 runes_found = [link.text.strip() for link in rune_links]
             else:
                 runes_found = []
-            if "UNCOMMON•GOODS" not in runes_found:
+            if "UNCOMMONGOODS" not in runes_found:
                 print(f"❌ Rune not found in ord server HTML: {runes_found}")
                 return None
 
@@ -109,7 +109,7 @@ def check_transaction(txid, admin_address):
         validated_mints[txid] = {
             "txid": txid,
             "address": rune_owner_address,
-            "coin": "UNCOMMON•GOODS",
+            "coin": "UNCOMMONGOODS",
             "confirmed_by_ord": True
         }
         return validated_mints[txid]
